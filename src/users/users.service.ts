@@ -1,64 +1,57 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { User } from './user.model';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { User } from './entities/user.entitiy';
+import { Repository } from 'typeorm';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class UsersService {
-  private users: User[] = [
-    {
-      id: '1',
-      name: 'Johan Garcia',
-      email: 'johan@santamarias.com',
-    },
-    {
-      id: '2',
-      name: 'Angie Gaona',
-      email: 'angie@santamarias.com',
-    },
-  ];
+  constructor(
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
+  ) {}
 
-  findAll() {
-    return this.users;
+  async findAll() {
+    const users = await this.usersRepository.find();
+    return users;
   }
 
-  findOne(id: string) {
-    const position = this.getUserById(id);
-    return this.users[position];
+  async findOne(id: number) {
+    const user = await this.getUserById(id);
+    if (user.id === 1) {
+      throw new ForbiddenException('You are not allowed to access this user');
+    }
+    return user;
   }
 
-  create(body: CreateUserDto) {
-    const newUser = {
-      ...body,
-      id: `${new Date().getTime()}`,
-    };
-    this.users.push(newUser);
-    return newUser;
+  async create(body: CreateUserDto) {
+    try {
+      const newUser = await this.usersRepository.save(body);
+      return newUser;
+    } catch {
+      throw new BadRequestException('Error creating user');
+    }
   }
 
-  update(id: string, changes: UpdateUserDto) {
-    const position = this.getUserById(id);
-    const currentData = this.users[position];
-    const updatedUser = {
-      ...currentData,
-      ...changes,
-    };
-    this.users[position] = updatedUser;
-    return updatedUser;
+  async update(id: number, changes: UpdateUserDto) {
+    const user = await this.getUserById(id);
+    const updatedUser = this.usersRepository.merge(user, changes);
+    return this.usersRepository.save(updatedUser);
   }
 
-  delete(id: string) {
-    const position = this.getUserById(id);
-    this.users.splice(position, 1);
+  async delete(id: number) {
+    const user = await this.getUserById(id);
+    await this.usersRepository.delete(user);
     return { message: 'User deleted' };
   }
 
-  private getUserById(id: string) {
-    const position = this.users.findIndex((user) => user.id === id);
-    if (position === -1) {
+  private async getUserById(id: number) {
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) {
       throw new NotFoundException(`User ${id} Not Found`);
     }
-    return position;
+    return user;
   }
 }
