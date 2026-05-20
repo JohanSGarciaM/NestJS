@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { User } from './entities/user.entitiy';
 import { Repository } from 'typeorm';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
@@ -27,11 +27,12 @@ export class UsersService {
   }
 
   async create(body: CreateUserDto) {
+    // eslint-disable-next-line no-useless-catch
     try {
       const newUser = await this.usersRepository.save(body);
       return newUser;
-    } catch {
-      throw new BadRequestException('Error creating user');
+    } catch (error) {
+      throw error;
     }
   }
 
