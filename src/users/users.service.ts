@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { User } from './entities/user.entitiy';
 import { Repository } from 'typeorm';
 import { CreateUserDto, UpdateUserDto } from './dtos/user.dto';
@@ -20,15 +20,23 @@ export class UsersService {
 
   async findOne(id: number) {
     const user = await this.getUserById(id);
-    if (user.id === 1) {
-      throw new ForbiddenException('You are not allowed to access this user');
-    }
     return user;
   }
 
   async getProfileByUserId(id: number) {
     const user = await this.findOne(id);
     return user.profile;
+  }
+
+  async getPostsByUserId(id: number) {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: ['posts'],
+    });
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+    return user.posts;
   }
 
   async create(body: CreateUserDto) {
