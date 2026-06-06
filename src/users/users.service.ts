@@ -41,8 +41,9 @@ export class UsersService {
 
   async create(body: CreateUserDto) {
     try {
-      const newUser = await this.usersRepository.save(body);
-      return newUser;
+      const newUser = this.usersRepository.create(body);
+      const savedUser = await this.usersRepository.save(newUser);
+      return this.findOne(savedUser.id);
     } catch {
       throw new BadRequestException('Error creating user');
     }
@@ -76,6 +77,18 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException(`User ${id} Not Found`);
     }
+    return user;
+  }
+
+  async getUserByEmail(email: string) {
+    const user = await this.usersRepository.findOne({
+      where: { email },
+    });
+    return user;
+  }
+
+  async getUserByEmailWithPassword(email: string) {
+    const user = await this.usersRepository.createQueryBuilder('user').addSelect('user.password').where('user.email = :email', { email }).getOne();
     return user;
   }
 }

@@ -4,6 +4,7 @@ import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Env } from './env.model';
 import { PostsModule } from './posts/posts.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -19,12 +20,13 @@ import { PostsModule } from './posts/posts.module';
         password: configService.get('POSTGRES_PASSWORD', { infer: true }),
         database: configService.get('POSTGRES_DB', { infer: true }),
         autoLoadEntities: true,
-        synchronize: false,
+        synchronize: true,
       }),
       inject: [ConfigService],
     }),
     UsersModule,
     PostsModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
